@@ -10,7 +10,7 @@ pub struct AppState {
 }
 
 // ws handler struct
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct WsQueryParams {
     pub group_id: String,
     pub table_number: u16,
@@ -19,7 +19,7 @@ pub struct WsQueryParams {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ServerMessage {
     pub group_id: String,
-    pub table_number: u16,
+    pub table_number: Option<Vec<u16>>,
     pub message_type: String,
     pub payload: String,
 }

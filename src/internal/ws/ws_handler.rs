@@ -6,6 +6,8 @@ use axum::{
     response::IntoResponse};
 use futures::{SinkExt, StreamExt};
 use tokio::sync::{broadcast, mpsc};
+use crate::internal::ws::socket_struct::ServerMessage;
+
 use super::socket_struct::{AppState, WsQueryParams};
 
 
@@ -77,13 +79,37 @@ impl WsHandler {
         // sbscribe to broadcast channel
         let mut rx = tx.subscribe();
 
-        // send to message to client
+        // message filtering function
+        fn should_receive_message(server_message: &ServerMessage, params: &WsQueryParams) -> bool {
+            let tablematch = match &server_message.table_number {
+                Some(numbers) => numbers.contains(&params.table_number),
+                None => true,
+            };
+            tablematch
+        }
+
+        // parse message from orderServer
+        fn parse_server_message(message: &str) -> Option<ServerMessage> {
+            serde_json::from_str(message).ok()
+        }
+
+        // send to message to client from server
+        let params_clone = params.clone();
         let tx_clone = tx.clone();
         tokio::spawn(async move {
             while let Ok(msg) = rx.recv().await {
-                // send message to client from another client
-                if client_sender.send(Message::Text(msg.into())).await.is_err() {
-                    break;
+                // 서버 메시지라면 JSON 파싱 후 필터링
+                if let Some(server_msg) = parse_server_message(&msg) {
+                    if should_receive_message(&server_msg, &params_clone) {
+                        if client_sender.send(Message::Text(msg.into())).await.is_err() {
+                            break;
+                        }
+                    }
+                } else {
+                    // 일반 메시지는 모두 전송
+                    if client_sender.send(Message::Text(msg.into())).await.is_err() {
+                        break;
+                    }
                 }
             }
         });
