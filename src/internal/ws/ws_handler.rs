@@ -29,45 +29,44 @@ impl WsHandler {
         Query(params): Query<WsQueryParams>,
         State(state): State<AppState>,
     ) -> impl IntoResponse {
-        let group_id = params.group_id;
-        Self::set_websocket(ws, state, group_id).await
+        Self::set_websocket(ws, state, params).await
     }
 
     // grouping use path params
     pub async fn set_group_with_path_handler(
         ws: WebSocketUpgrade,
-        Path(group_id): Path<String>,
+        Path(params): Path<WsQueryParams>,
         State(state): State<AppState>,
     ) -> impl IntoResponse {
-        Self::set_websocket(ws, state, group_id).await
+        Self::set_websocket(ws, state, params).await
     }
 
     // set websocket and upgrade
     async fn set_websocket(
         ws: WebSocketUpgrade,
         state: AppState,
-        group_id: String,
+        params: WsQueryParams,
     ) -> impl IntoResponse {
         // get group channel or create new group channel
         let tx = {
             let mut groups = state.groups.lock().unwrap();
-            if !groups.contains_key(&group_id) {
+            if !groups.contains_key(&params.group_id) {
                 let (tx, _rx) = broadcast::channel::<String>(100);
-                groups.insert(group_id.clone(), Arc::new(tx));
+                groups.insert(params.group_id.clone(), Arc::new(tx));
             }
-            groups.get(&group_id).unwrap().clone()
+            groups.get(&params.group_id).unwrap().clone()
         };
 
-        tracing::info!("client join to the group: {}", group_id);
+        tracing::info!("client join to the group: {}", params.group_id);
 
-        ws.on_upgrade(move |socket| Self::handle_socket(socket, tx, group_id))
+        ws.on_upgrade(move |socket| Self::handle_socket(socket, tx, params))
     }
 
     // websocket connection handler
     async fn handle_socket(
         socket: WebSocket,
         tx: Arc<broadcast::Sender<String>>,
-        group_id: String
+        params: WsQueryParams
     ) {
         // sperate receiver and sender
         let (mut sender, mut receiver) = socket.split();
@@ -98,7 +97,11 @@ impl WsHandler {
             }
         });
         // 접속 메시지 전송
-        let connect_msg = format!("새로운 사용자가 그룹 '{}' 에 접속했습니다.", group_id);
+        let connect_msg = format!(
+            "{} {} join to the {}",
+            params.role,
+            params.table_number,
+            params.group_id);
         let _ = tx.send(connect_msg);
 
         // 클라이언트로부터 메시지 수신 및 처리
@@ -106,7 +109,12 @@ impl WsHandler {
             match message {
                 Message::Text(text) => {
                     // 받은 메시지를 같은 그룹의 모든 클라이언트에게 브로드캐스트
-                    let formatted_msg = format!("[{}] {}", group_id, text);
+                    let formatted_msg = format!(
+                        "[group: {}][table: {}][role: {}] {}",
+                        params.group_id,
+                        params.table_number,
+                        params.role,
+                        text);
                     if tx_clone.send(formatted_msg).is_err() {
                         break;
                     }
@@ -119,10 +127,17 @@ impl WsHandler {
         }
 
         // 접속 종료 메시지 전송
-        let disconnect_msg = format!("사용자가 그룹 '{}' 에서 나갔습니다.", group_id);
+        let disconnect_msg = format!(
+            "{} {} leave the {}",
+            params.role,
+            params.table_number,
+            params.group_id);
         let _ = tx.send(disconnect_msg);
 
-        tracing::info!("그룹 {} WebSocket 연결 종료", group_id);
+        tracing::info!("{} {} leave the {}",
+            params.role,
+            params.table_number,
+            params.group_id);
     }
 
     // 서버 상태 확인용 핸들러

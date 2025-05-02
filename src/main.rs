@@ -25,7 +25,7 @@ async fn main() {
     // set router
     let app = Router::new()
         .route("/ws", get(WsHandler::set_group_handler))
-        .route("/ws/{group_id}", get(WsHandler::set_group_with_path_handler))
+        .route("/ws/{group_id}/{table_number}/{role}", get(WsHandler::set_group_with_path_handler))
         .route("/groups", get(WsHandler::list_groups_handler))
         .route("/health", get(WsHandler::health_check))
         .layer(TraceLayer::new_for_http())

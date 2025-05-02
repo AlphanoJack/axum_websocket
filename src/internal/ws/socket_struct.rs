@@ -13,5 +13,6 @@ pub struct AppState {
 #[derive(Deserialize)]
 pub struct WsQueryParams {
     pub group_id: String,
-    // pub table_number: String,
+    pub table_number: u16,
+    pub role: String,
 }
