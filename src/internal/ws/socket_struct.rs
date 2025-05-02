@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::{Arc, Mutex}};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 
 // application state
@@ -15,4 +15,12 @@ pub struct WsQueryParams {
     pub group_id: String,
     pub table_number: u16,
     pub role: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ServerMessage {
+    pub group_id: String,
+    pub table_number: u16,
+    pub role: String,
+    pub message: String,
 }
