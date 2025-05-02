@@ -98,8 +98,7 @@ impl WsHandler {
         });
         // 접속 메시지 전송
         let connect_msg = format!(
-            "{} {} join to the {}",
-            params.role,
+            "tb {} join to the {}",
             params.table_number,
             params.group_id);
         let _ = tx.send(connect_msg);
@@ -110,10 +109,9 @@ impl WsHandler {
                 Message::Text(text) => {
                     // 받은 메시지를 같은 그룹의 모든 클라이언트에게 브로드캐스트
                     let formatted_msg = format!(
-                        "[group: {}][table: {}][role: {}] {}",
+                        "[group: {}][table: {}] {}",
                         params.group_id,
                         params.table_number,
-                        params.role,
                         text);
                     if tx_clone.send(formatted_msg).is_err() {
                         break;
@@ -128,14 +126,12 @@ impl WsHandler {
 
         // 접속 종료 메시지 전송
         let disconnect_msg = format!(
-            "{} {} leave the {}",
-            params.role,
+            "tb {} leave the {}",
             params.table_number,
             params.group_id);
         let _ = tx.send(disconnect_msg);
 
-        tracing::info!("{} {} leave the {}",
-            params.role,
+        tracing::info!("tb {} leave the {}",
             params.table_number,
             params.group_id);
     }
