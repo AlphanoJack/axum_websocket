@@ -30,3 +30,9 @@ tracing-subscriber = "0.3.19"
 
 # dotenv
 dotenv = { version = "0.15.0", features = ["cli"] }
+
+# jwt
+jsonwebtoken = "9.3.1"
+
+# async_trait
+async-trait = "0.1.88"

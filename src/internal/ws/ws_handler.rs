@@ -83,7 +83,7 @@ impl WsHandler {
         fn should_receive_message(server_message: &ServerMessage, params: &WsQueryParams) -> bool {
             let tablematch = match &server_message.table_number {
                 Some(numbers) => numbers.contains(&params.table_number),
-                None => true,
+                None => false,
             };
             tablematch
         }

@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::{Arc, Mutex}};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
+use serde_json::Value;
 
 // application state
 #[derive(Clone)]
@@ -21,5 +22,5 @@ pub struct ServerMessage {
     pub group_id: String,
     pub table_number: Option<Vec<u16>>,
     pub message_type: String,
-    pub payload: String,
+    pub payload: Value,
 }
