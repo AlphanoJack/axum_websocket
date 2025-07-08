@@ -1,7 +1,8 @@
 use std::{collections::HashMap, sync::{Arc, Mutex}};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
+use serde_json::Value;
 
 // application state
 #[derive(Clone)]
@@ -10,8 +11,16 @@ pub struct AppState {
 }
 
 // ws handler struct
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct WsQueryParams {
     pub group_id: String,
-    // pub table_number: String,
+    pub table_number: u16,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ServerMessage {
+    pub group_id: String,
+    pub table_number: Option<Vec<u16>>,
+    pub message_type: String,
+    pub payload: Value,
 }
